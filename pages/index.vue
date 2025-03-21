@@ -7,7 +7,7 @@
       
       <div class="mt-8">
         <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow-md">
-          <h2 class="text-2xl font-bold mb-4">Welcome to MTG Tournament Master</h2>
+          <h2 class="text-2xl font-bold mb-4">Welcome to MTG Collector</h2>
           
           <p class="mb-4">
             This application helps you keep track of your Magic: The Gathering cards for tournaments.
