@@ -18,7 +18,7 @@ export default defineNuxtConfig({
   ],
 
   app: {
-    baseURL: '/mtg-collector-front-end/', // Replace with your GitHub repository name
+    baseURL: '/mtg-collector-front-end', // Replace with your GitHub repository name
     head: {
       title: 'MTG Collector',
       meta: [
