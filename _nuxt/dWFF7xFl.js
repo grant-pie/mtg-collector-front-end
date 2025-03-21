@@ -1,1 +1,0 @@
-import{I as r,J as n,K as a}from"./CpfRM8F9.js";import{u as o}from"./Cl4f5Tkc.js";const c=r(async s=>{let e,i;const t=o();if(t.isAuthenticated||([e,i]=n(()=>t.initAuth()),await e,i()),!t.isAuthenticated)return a("/login");if(!t.isAdmin)return a("/")});export{c as default};
