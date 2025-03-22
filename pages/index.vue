@@ -1,7 +1,7 @@
 <template>
     <div>
       <Header 
-        title="MTG Tournament Master" 
+        title="MTG Collector" 
         subtitle="Track your Magic: The Gathering cards for tournaments"
       />
       
