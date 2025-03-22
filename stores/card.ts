@@ -25,6 +25,7 @@ interface UserCard {
   userId: string;
   cardId: string;
   cardDetails: Card;
+  revealed: boolean; // Added the revealed property
   createdAt: string;
 }
 
@@ -35,6 +36,10 @@ interface PaginationMeta {
   totalPages: number;
   currentPage: number;
 }
+
+// Valid page size options as defined in user-card.controller.ts
+const VALID_PAGE_SIZES = [10, 20, 50];
+const DEFAULT_PAGE_SIZE = 10;
 
 export const useCardStore = defineStore('card', {
   state: () => ({
@@ -48,7 +53,8 @@ export const useCardStore = defineStore('card', {
       itemsPerPage: 10,
       totalPages: 0,
       currentPage: 1
-    } as PaginationMeta
+    } as PaginationMeta,
+    validPageSizes: VALID_PAGE_SIZES
   }),
   
   actions: {
@@ -61,6 +67,9 @@ export const useCardStore = defineStore('card', {
         this.loading = true;
         this.error = null;
         
+        // Validate the limit value against allowed page sizes
+        const validatedLimit = this.validatePageSize(limit);
+        
         const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/${userId}`, {
           method: 'GET',
           headers: {
@@ -68,7 +77,7 @@ export const useCardStore = defineStore('card', {
           },
           params: {
             page,
-            limit
+            limit: validatedLimit
           }
         });
         
@@ -99,6 +108,9 @@ export const useCardStore = defineStore('card', {
         if (searchParams.limit === undefined) {
           searchParams.limit = 10;
         }
+        
+        // Validate the limit value
+        searchParams.limit = this.validatePageSize(searchParams.limit);
         
         // Build query string
         const queryParams = new URLSearchParams();
@@ -153,6 +165,9 @@ export const useCardStore = defineStore('card', {
         if (searchParams.limit === undefined) {
           searchParams.limit = 10;
         }
+        
+        // Validate the limit value
+        searchParams.limit = this.validatePageSize(searchParams.limit);
         
         // Build query string
         const queryParams = new URLSearchParams();
@@ -218,6 +233,34 @@ export const useCardStore = defineStore('card', {
       }
     },
     
+    // New method to change items per page
+    async changeItemsPerPage(userId: string, limit: number, searchParams: Record<string, any> = {}) {
+      // Validate the limit value
+      const validatedLimit = this.validatePageSize(limit);
+      
+      // Reset to page 1 when changing items per page
+      const params = { ...searchParams, limit: validatedLimit, page: 1 };
+      
+      if (searchParams.username) {
+        // Use fetchCardsByUsername if we're viewing someone else's collection
+        const username = searchParams.username;
+        delete params.username;
+        await this.fetchCardsByUsername(username, params);
+      } else {
+        // Otherwise use the user ID version
+        await this.searchUserCards(userId, params);
+      }
+    },
+    
+    // Validate page size to ensure it's one of the allowed values
+    validatePageSize(limit: number): number {
+      // If limit is not a valid option, return default page size
+      if (isNaN(limit) || !VALID_PAGE_SIZES.includes(limit)) {
+        return DEFAULT_PAGE_SIZE;
+      }
+      return limit;
+    },
+    
     async addCardToUser(userId: string, scryfallId: string) {
       const authStore = useAuthStore();
       const config = useRuntimeConfig();
@@ -236,8 +279,8 @@ export const useCardStore = defineStore('card', {
           body: { scryfallId }
         });
         
-        // Refresh the cards list - maintain current page
-        await this.fetchUserCards(userId, this.pagination.currentPage);
+        // Refresh the cards list - maintain current page and limit
+        await this.fetchUserCards(userId, this.pagination.currentPage, this.pagination.itemsPerPage);
         return userCard;
       } catch (err: any) {
         console.error('Error adding card:', err);
@@ -263,10 +306,38 @@ export const useCardStore = defineStore('card', {
           }
         });
         
-        // Refresh the cards list - maintain current page
-        await this.fetchUserCards(userId, this.pagination.currentPage);
+        // Refresh the cards list - maintain current page and limit
+        await this.fetchUserCards(userId, this.pagination.currentPage, this.pagination.itemsPerPage);
       } catch (err: any) {
         this.error = err.message || 'Failed to remove card';
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    // New method to reveal a card
+    async revealCard(cardId: string, userId: string) {
+      const authStore = useAuthStore();
+      const config = useRuntimeConfig();
+      if (!authStore.token) return;
+      
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/${cardId}/reveal`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${authStore.token}`
+          }
+        });
+        
+        // Refresh the cards list - maintain current page and limit
+        await this.fetchUserCards(userId, this.pagination.currentPage, this.pagination.itemsPerPage);
+        return response.userCard;
+      } catch (err: any) {
+        console.error('Error revealing card:', err);
+        this.error = err.message || 'Failed to reveal card';
       } finally {
         this.loading = false;
       }

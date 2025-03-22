@@ -44,6 +44,19 @@
           </div>
         </div>
         
+        <!-- Add this to the search form grid, next to other filter options -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Revealed</label>
+          <select 
+            v-model="searchParams.revealed" 
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          >
+            <option value="">Any</option>
+            <option value="true">Revealed</option>
+            <option value="false">Not Revealed</option>
+          </select>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700">Rarity</label>
           <select 
@@ -289,7 +302,7 @@
       </div>
       
       <!-- Items per page selector -->
-      <!--<div class="mt-4 flex justify-end">
+      <div class="mt-4 flex justify-end">
         <div class="flex items-center space-x-2">
           <label class="text-sm text-gray-600">Items per page:</label>
           <select 
@@ -300,10 +313,9 @@
             <option value="10">10</option>
             <option value="20">20</option>
             <option value="50">50</option>
-            <option value="100">100</option>
           </select>
         </div>
-      </div>-->
+      </div>
     </div>
   </div>
 </template>
@@ -503,9 +515,16 @@ const goToNextPage = async () => {
 };
 
 const changeItemsPerPage = async () => {
-  searchParams.value.page = 1;
-  searchParams.value.limit = itemsPerPage.value;
-  await performSearch();
+  // Convert to number since v-model with select might give a string
+  const limit = Number(itemsPerPage.value);
+  searchParams.value.limit = limit;
+  
+  if (props.userId) {
+    await cardStore.changeItemsPerPage(props.userId, limit, getCleanParams());
+  } else if (props.userName) {
+    const params = getCleanParams();
+    await cardStore.changeItemsPerPage('', limit, { ...params, username: props.userName });
+  }
 };
 
 // Helper to get clean parameters
@@ -573,6 +592,7 @@ const resetSearch = async () => {
     minToughness: '',
     text: '',
     artist: '',
+    revealed: '', // Reset the revealed filter
     createdAt: '',
     createdAtStart: '',
     createdAtEnd: '',
