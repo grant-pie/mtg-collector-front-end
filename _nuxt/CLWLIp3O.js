@@ -1,0 +1,1 @@
+import{J as i,K as o,L as u}from"./NH000gxJ.js";import{u as r}from"./CxcP87si.js";const d=i(async s=>{let e,a;const t=r();if(t.isAuthenticated||([e,a]=o(()=>t.initAuth()),await e,a()),!t.isAuthenticated)return u("/login")});export{d as default};
