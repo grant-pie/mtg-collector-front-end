@@ -1,1 +1,0 @@
-import{I as r,J as n,K as a}from"./BNPd43ba.js";import{u as o}from"./Cp1D7Whl.js";const c=r(async s=>{let e,i;const t=o();if(t.isAuthenticated||([e,i]=n(()=>t.initAuth()),await e,i()),!t.isAuthenticated)return a("/login");if(!t.isAdmin)return a("/")});export{c as default};
