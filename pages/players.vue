@@ -37,13 +37,6 @@
             >
               <span class="mr-1">View Cards</span>
             </button>
-            
-            <button 
-              class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded flex items-center"
-              @click="() => {}"
-            >
-              <span class="mr-1">View Decks</span>
-            </button>
           </div>
         </div>
       </div>
