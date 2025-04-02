@@ -34,13 +34,30 @@
           My Decks
         </NuxtLink>
         <NuxtLink 
+          v-if="isAuthenticated" 
+          to="/trades" 
+          class="hover:text-blue-300"
+        >
+          My Trades
+        </NuxtLink>
+        <NuxtLink 
           v-if="isAdmin" 
           to="/admin" 
           class="hover:text-blue-300"
         >
           Admin
         </NuxtLink>
-        
+        <NuxtLink 
+          v-if="isAdmin" 
+          to="/notifications" 
+          class="hover:text-blue-300"
+        >
+          Notifications
+        </NuxtLink>
+        <NotificationBell 
+        v-if="isAuthenticated" 
+        class="text-black"
+        />
         <!-- Dynamic Login/Logout Button -->
         <button 
           v-if="isAuthenticated" 
@@ -60,6 +77,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '~/stores/auth';
 import { useRouter } from 'vue-router';
 import LoginButton from '~/components/Auth/LoginButton.vue';
+import NotificationBell from '~/components/Notification/NotificationBell.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

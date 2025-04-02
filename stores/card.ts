@@ -58,6 +58,33 @@ export const useCardStore = defineStore('card', {
   }),
   
   actions: {
+
+    async fetchCardById(cardId: string) {
+      const authStore = useAuthStore();
+      const config = useRuntimeConfig();
+      if (!authStore.token) return null;
+      
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/${cardId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authStore.token}`
+          }
+        });
+        
+        return response.userCard;
+      } catch (err: any) {
+        console.error('Error fetching card by ID:', err);
+        this.error = err.message || 'Failed to fetch card';
+        return null;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async fetchUserCards(userId: string, page = 1, limit = 10) {
       const authStore = useAuthStore();
       const config = useRuntimeConfig();
@@ -70,7 +97,7 @@ export const useCardStore = defineStore('card', {
         // Validate the limit value against allowed page sizes
         const validatedLimit = this.validatePageSize(limit);
         
-        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/${userId}`, {
+        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/user/${userId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authStore.token}`

@@ -243,7 +243,7 @@
           @onClickAction="emitOnClickAction" 
         />
         <div v-if="isCardInDeck(card)" class="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center">
-          <p class="text-lg font-bold text-gray-800">Card in Deck</p>
+          <p class="text-lg font-bold text-gray-800">Selected</p>
         </div>
       </div>
     </div>

@@ -10,6 +10,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:3001',
+      wsBaseUrl: process.env.WS_BASE_URL || 'http://localhost:3001'
     }
   },
 
@@ -18,7 +19,7 @@ export default defineNuxtConfig({
   ],
 
   app: {
-    baseURL: '/mtg-collector-front-end', // Replace with your GitHub repository name
+    baseURL: '', // Replace with your GitHub repository name
     head: {
       title: 'MTG Collector',
       meta: [
@@ -30,6 +31,22 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
       ]
     }
+  },
+
+  // Add server proxy configuration for websocket connections
+  nitro: {
+    devProxy: {
+      '/socket.io': {
+        target: process.env.API_BASE_URL || 'http://localhost:3001',
+        ws: true,
+        changeOrigin: true
+      }
+    }
+  },
+
+  // Ignore WebSockets routes in routing
+  routeRules: {
+    '/socket.io/**': { prerender: false }
   },
 
   compatibilityDate: '2025-03-15'
