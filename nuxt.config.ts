@@ -19,7 +19,7 @@ export default defineNuxtConfig({
   ],
 
   app: {
-    baseURL: '', // Replace with your GitHub repository name
+    baseURL: 'pie-api.online', // Replace with your GitHub repository name
     head: {
       title: 'MTG Collector',
       meta: [
