@@ -45,9 +45,24 @@ onMounted(async () => {
     
     console.log('Auth result:', authResult);
     
-    if (authResult.token) {
+    // Check for access_token (new format) or token (old format)
+    if (authResult.access_token || authResult.token) {
+      const token = authResult.access_token || authResult.token;
+      
       // Store the token and user data
-      authStore.setToken(authResult.token);
+      authStore.setToken(token);
+      
+      // Handle the remember me flag if present
+      if (authResult.rememberMe !== undefined) {
+        authStore.setRememberMe(authResult.rememberMe);
+      }
+      
+      // Handle refresh token if present
+      if (authResult.refresh_token) {
+        authStore.setRefreshToken(authResult.refresh_token);
+      }
+      
+      // Set user data
       if (authResult.user) {
         authStore.setUser(authResult.user);
       }
@@ -55,6 +70,7 @@ onMounted(async () => {
       // Redirect to profile page
       router.push('/profile');
     } else {
+      console.error('Auth response structure:', authResult);
       error.value = 'No token received from server';
       loading.value = false;
     }
