@@ -212,7 +212,7 @@ export const useCardStore = defineStore('card', {
         }
         
         const queryString = queryParams.toString();
-        const url = `${config.public.apiBaseUrl}/user-cards/${userId}${queryString ? `?${queryString}` : ''}`;
+        const url = `${config.public.apiBaseUrl}/user-cards/user/${userId}${queryString ? `?${queryString}` : ''}`;
         
         const response = await $fetch(url, {
           method: 'GET',
