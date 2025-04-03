@@ -23,12 +23,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRuntimeConfig } from '#app';
 import { useAuthStore } from '~/stores/auth'; // Update path as needed
 
 const config = useRuntimeConfig();
 const authStore = useAuthStore();
+const loginInProgress = ref(false);
 
 // Use computed property to create two-way binding with the store
 const rememberMe = computed({
@@ -37,8 +38,17 @@ const rememberMe = computed({
 });
 
 const login = async () => {
+  if (loginInProgress.value) return;
+  
+  loginInProgress.value = true;
+  
   try {
-    // Send the remember me preference to the backend before redirecting
+    // Store preference in localStorage as a backup
+    if (process.client) {
+      localStorage.setItem('oauth_remember_me', rememberMe.value.toString());
+    }
+    
+    // Send the remember me preference to the backend
     await fetch(`${config.public.apiBaseUrl}/auth/remember-me`, {
       method: 'POST',
       headers: {
@@ -48,12 +58,14 @@ const login = async () => {
       body: JSON.stringify({ rememberMe: rememberMe.value }),
     });
     
-    // Then redirect to Google OAuth
-    window.location.href = `${config.public.apiBaseUrl}/auth/google`;
+    // Redirect to Google OAuth with remember me as URL parameter (fallback)
+    window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${rememberMe.value}`;
   } catch (error) {
     console.error('Failed to set remember me preference:', error);
-    // Still redirect to login even if the preference setting fails
-    window.location.href = `${config.public.apiBaseUrl}/auth/google`;
+    // Still redirect with the parameter even if API call fails
+    window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${rememberMe.value}`;
+  } finally {
+    loginInProgress.value = false;
   }
 };
 </script>
