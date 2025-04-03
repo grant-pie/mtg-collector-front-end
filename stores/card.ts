@@ -248,15 +248,39 @@ export const useCardStore = defineStore('card', {
       }
     },
     
+    // Fix for nextPage method in card.ts
     async nextPage(userId: string, searchParams: Record<string, any> = {}) {
       if (this.pagination.currentPage < this.pagination.totalPages) {
-        await this.goToPage(userId, this.pagination.currentPage + 1, searchParams);
+        // Make sure we preserve the limit parameter
+        const nextPageParams = { 
+          ...searchParams, 
+          page: this.pagination.currentPage + 1
+        };
+        
+        // Ensure limit is set and validated
+        if (!nextPageParams.limit) {
+          nextPageParams.limit = this.pagination.itemsPerPage;
+        }
+        
+        await this.goToPage(userId, this.pagination.currentPage + 1, nextPageParams);
       }
     },
-    
+
+    // Fix for prevPage method in card.ts
     async prevPage(userId: string, searchParams: Record<string, any> = {}) {
       if (this.pagination.currentPage > 1) {
-        await this.goToPage(userId, this.pagination.currentPage - 1, searchParams);
+        // Make sure we preserve the limit parameter
+        const prevPageParams = { 
+          ...searchParams, 
+          page: this.pagination.currentPage - 1
+        };
+        
+        // Ensure limit is set and validated
+        if (!prevPageParams.limit) {
+          prevPageParams.limit = this.pagination.itemsPerPage;
+        }
+        
+        await this.goToPage(userId, this.pagination.currentPage - 1, prevPageParams);
       }
     },
     
@@ -281,11 +305,24 @@ export const useCardStore = defineStore('card', {
     
     // Validate page size to ensure it's one of the allowed values
     validatePageSize(limit: number): number {
-      // If limit is not a valid option, return default page size
-      if (isNaN(limit) || !VALID_PAGE_SIZES.includes(limit)) {
-        return DEFAULT_PAGE_SIZE;
+      // Convert string to number if needed
+      const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+      
+      // If we have a valid number that matches our options, use it
+      if (!isNaN(parsedLimit) && VALID_PAGE_SIZES.includes(parsedLimit)) {
+        return parsedLimit;
       }
-      return limit;
+      
+      // For invalid values, check if we have a current itemsPerPage in pagination
+      if (this.pagination && this.pagination.itemsPerPage) {
+        // Maintain the current pagination setting if possible
+        if (VALID_PAGE_SIZES.includes(this.pagination.itemsPerPage)) {
+          return this.pagination.itemsPerPage;
+        }
+      }
+      
+      // Fallback to default
+      return DEFAULT_PAGE_SIZE;
     },
     
     async addCardToUser(userId: string, scryfallId: string) {

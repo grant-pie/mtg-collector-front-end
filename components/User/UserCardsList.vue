@@ -476,8 +476,18 @@ watch(() => props.userId, async (newUserId) => {
 
 // Pagination methods
 const goToPage = async (page) => {
-  searchParams.value.page = page;
-  await performSearch();
+  // Create fresh params with explicit limit
+  const params = {
+    ...getCleanParams(),
+    page: page,
+    limit: itemsPerPage.value // Explicitly set the limit
+  };
+  
+  if (props.userId) {
+    await cardStore.searchUserCards(props.userId, params);
+  } else if (props.userName) {
+    await cardStore.fetchCardsByUsername(props.userName, params);
+  }
 };
 
 const goToFirstPage = () => {
@@ -492,24 +502,41 @@ const goToLastPage = () => {
   }
 };
 
-const goToPrevPage = async () => {
-  if (pagination.value.currentPage > 1) {
-    const prevPageParams = { ...getCleanParams(), username: props.userName };
+const goToNextPage = async () => {
+  if (pagination.value.currentPage < pagination.value.totalPages) {
+    const nextPage = pagination.value.currentPage + 1;
+    
+    // Create fresh params with explicit limit
+    const params = {
+      ...getCleanParams(),
+      page: nextPage,
+      limit: itemsPerPage.value // Explicitly set the limit
+    };
+    
     if (props.userId) {
-      await cardStore.prevPage(props.userId, prevPageParams);
+      await cardStore.searchUserCards(props.userId, params);
     } else if (props.userName) {
-      await cardStore.prevPage('', prevPageParams);
+      await cardStore.fetchCardsByUsername(props.userName, params);
     }
   }
 };
 
-const goToNextPage = async () => {
-  if (pagination.value.currentPage < pagination.value.totalPages) {
-    const nextPageParams = { ...getCleanParams(), username: props.userName };
+// Update the goToPrevPage method similarly
+const goToPrevPage = async () => {
+  if (pagination.value.currentPage > 1) {
+    const prevPage = pagination.value.currentPage - 1;
+    
+    // Create fresh params with explicit limit
+    const params = {
+      ...getCleanParams(),
+      page: prevPage,
+      limit: itemsPerPage.value // Explicitly set the limit
+    };
+    
     if (props.userId) {
-      await cardStore.nextPage(props.userId, nextPageParams);
+      await cardStore.searchUserCards(props.userId, params);
     } else if (props.userName) {
-      await cardStore.nextPage('', nextPageParams);
+      await cardStore.fetchCardsByUsername(props.userName, params);
     }
   }
 };
@@ -518,12 +545,14 @@ const changeItemsPerPage = async () => {
   // Convert to number since v-model with select might give a string
   const limit = Number(itemsPerPage.value);
   searchParams.value.limit = limit;
+  searchParams.value.page = 1; // Reset to page 1 when changing items per page
+  
+  const cleanParams = getCleanParams();
   
   if (props.userId) {
-    await cardStore.changeItemsPerPage(props.userId, limit, getCleanParams());
+    await cardStore.searchUserCards(props.userId, cleanParams);
   } else if (props.userName) {
-    const params = getCleanParams();
-    await cardStore.changeItemsPerPage('', limit, { ...params, username: props.userName });
+    await cardStore.fetchCardsByUsername(props.userName, cleanParams);
   }
 };
 
@@ -555,9 +584,9 @@ const getCleanParams = () => {
     cleanParams.createdAtEnd = formatDateForApi(cleanParams.createdAtEnd);
   }
   
-  // Add pagination parameters
-  cleanParams.page = searchParams.value.page;
+  // IMPORTANT: Explicitly set the limit to the current itemsPerPage value
   cleanParams.limit = itemsPerPage.value;
+  cleanParams.page = searchParams.value.page || 1;
   
   return cleanParams;
 };
@@ -565,6 +594,8 @@ const getCleanParams = () => {
 // Perform search with current parameters
 const performSearch = async () => {
   const cleanParams = getCleanParams();
+  // Explicitly ensure limit is set correctly
+  cleanParams.limit = itemsPerPage.value;
   
   if (props.userId) {
     await cardStore.searchUserCards(props.userId, cleanParams);
