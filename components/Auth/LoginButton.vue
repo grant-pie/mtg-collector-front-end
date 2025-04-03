@@ -3,6 +3,7 @@
   <div class="flex flex-col space-y-3">
     <button 
       @click="login" 
+      :disabled="loginInProgress"
       class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded flex items-center"
     >
       <span class="mr-2">Login with Google</span>
@@ -48,21 +49,11 @@ const login = async () => {
       localStorage.setItem('oauth_remember_me', rememberMe.value.toString());
     }
     
-    // Send the remember me preference to the backend
-    await fetch(`${config.public.apiBaseUrl}/auth/remember-me`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Important for session cookies
-      body: JSON.stringify({ rememberMe: rememberMe.value }),
-    });
-    
-    // Redirect to Google OAuth with remember me as URL parameter (fallback)
+    // Simply redirect to the Google auth endpoint with the remember me parameter
     window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${rememberMe.value}`;
   } catch (error) {
-    console.error('Failed to set remember me preference:', error);
-    // Still redirect with the parameter even if API call fails
+    console.error('Error starting login flow:', error);
+    // Fallback for errors
     window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${rememberMe.value}`;
   } finally {
     loginInProgress.value = false;
