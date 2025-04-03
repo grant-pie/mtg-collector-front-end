@@ -99,8 +99,25 @@ export const useAuthStore = defineStore('auth', {
         console.error('Error fetching user:', err);
         this.error = 'Failed to load user profile';
         // If we get an authentication error, try to refresh token
-        if ((err as any)?.response?.status === 401) {
-          await this.refreshAccessToken();
+        if ((err as any)?.response?.status === 401 && this.refreshToken) {
+          const refreshSuccess = await this.refreshAccessToken();
+          if (refreshSuccess) {
+            // Try fetching user again with the new token
+            try {
+              const response = await $fetch<User>(`${useRuntimeConfig().public.apiBaseUrl}/auth/profile`, {
+                headers: {
+                  Authorization: `Bearer ${this.token}`
+                }
+              });
+              
+              this.user = response;
+              // Clear error since we succeeded
+              this.error = null;
+            } catch (retryErr) {
+              console.error('Error fetching user after token refresh:', retryErr);
+              this.error = 'Failed to load user profile';
+            }
+          }
         }
       } finally {
         this.loading = false;
@@ -120,7 +137,8 @@ export const useAuthStore = defineStore('auth', {
           headers: {
             'Content-Type': 'application/json'
           },
-          credentials: 'include' // Important for cookies
+          body: JSON.stringify({ refreshToken: this.refreshToken }), // Include refreshToken in body
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -129,10 +147,14 @@ export const useAuthStore = defineStore('auth', {
         
         const data = await response.json();
         
-        if (data.accessToken) {
-          this.setToken(data.accessToken);
-          if (data.refreshToken) {
-            this.setRefreshToken(data.refreshToken);
+        // Handle the response with snake_case properties matching your backend
+        if (data.access_token) {
+          this.setToken(data.access_token);
+          if (data.refresh_token) {
+            this.setRefreshToken(data.refresh_token);
+          }
+          if (data.user) {
+            this.setUser(data.user);
           }
           return true;
         }
@@ -162,10 +184,21 @@ export const useAuthStore = defineStore('auth', {
           
           if (storedRefreshToken) {
             this.refreshToken = storedRefreshToken;
+            
+            // Try to fetch user with stored token
+            await this.fetchUser();
+            
+            // If fetchUser set an error (probably due to expired token), try refreshing the token
+            if (this.error && this.refreshToken) {
+              const refreshSuccess = await this.refreshAccessToken();
+              if (refreshSuccess) {
+                // Clear previous error
+                this.error = null;
+                // Retry fetching user with new token
+                await this.fetchUser();
+              }
+            }
           }
-          
-          // Try to fetch user with stored token
-          await this.fetchUser();
         }
       }
     },
