@@ -44,16 +44,16 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     setToken(token: string): void {
       this.token = token;
-      // Store in localStorage only if rememberMe is true
-      if (process.client && this.rememberMe) {
+      // Store in localStorage always, it will be cleared on logout if needed
+      if (process.client) {
         localStorage.setItem('token', token);
       }
     },
     
     setRefreshToken(refreshToken: string): void {
       this.refreshToken = refreshToken;
-      // Store refresh token in localStorage only if rememberMe is true
-      if (process.client && this.rememberMe) {
+      // Store refresh token in localStorage always, it will be cleared on logout if needed
+      if (process.client) {
         localStorage.setItem('refreshToken', refreshToken);
       }
     },
@@ -88,37 +88,13 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       
       try {
-        const response = await $fetch<User>(`${useRuntimeConfig().public.apiBaseUrl}/auth/profile`, {
-          headers: {
-            Authorization: `Bearer ${this.token}`
-          }
-        });
-        
+        // Import and use the fetch wrapper
+        const { fetch: authFetch } = useAuth();
+        const response = await authFetch('/auth/profile');
         this.user = response;
       } catch (err) {
         console.error('Error fetching user:', err);
         this.error = 'Failed to load user profile';
-        // If we get an authentication error, try to refresh token
-        if ((err as any)?.response?.status === 401 && this.refreshToken) {
-          const refreshSuccess = await this.refreshAccessToken();
-          if (refreshSuccess) {
-            // Try fetching user again with the new token
-            try {
-              const response = await $fetch<User>(`${useRuntimeConfig().public.apiBaseUrl}/auth/profile`, {
-                headers: {
-                  Authorization: `Bearer ${this.token}`
-                }
-              });
-              
-              this.user = response;
-              // Clear error since we succeeded
-              this.error = null;
-            } catch (retryErr) {
-              console.error('Error fetching user after token refresh:', retryErr);
-              this.error = 'Failed to load user profile';
-            }
-          }
-        }
       } finally {
         this.loading = false;
       }
@@ -132,22 +108,18 @@ export const useAuthStore = defineStore('auth', {
       
       try {
         const config = useRuntimeConfig();
-        const response = await fetch(`${config.public.apiBaseUrl}/auth/refresh-token`, {
+        
+        // Use $fetch which is Nuxt's wrapper around fetch
+        const data = await $fetch(`${config.public.apiBaseUrl}/auth/refresh-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ refreshToken: this.refreshToken }), // Include refreshToken in body
+          body: { refreshToken: this.refreshToken }, // $fetch automatically stringifies
           credentials: 'include'
         });
         
-        if (!response.ok) {
-          throw new Error('Failed to refresh token');
-        }
-        
-        const data = await response.json();
-        
-        // Handle the response with snake_case properties matching your backend
+        // Handle the response
         if (data.access_token) {
           this.setToken(data.access_token);
           if (data.refresh_token) {
@@ -179,25 +151,26 @@ export const useAuthStore = defineStore('auth', {
         const storedToken = localStorage.getItem('token');
         const storedRefreshToken = localStorage.getItem('refreshToken');
         
-        if (storedToken) {
-          this.token = storedToken;
+        if (storedRefreshToken) {
+          // We have a refresh token, set it in store
+          this.refreshToken = storedRefreshToken;
           
-          if (storedRefreshToken) {
-            this.refreshToken = storedRefreshToken;
+          if (storedToken) {
+            // We also have an access token, set it
+            this.token = storedToken;
             
-            // Try to fetch user with stored token
-            await this.fetchUser();
-            
-            // If fetchUser set an error (probably due to expired token), try refreshing the token
-            if (this.error && this.refreshToken) {
-              const refreshSuccess = await this.refreshAccessToken();
-              if (refreshSuccess) {
-                // Clear previous error
-                this.error = null;
-                // Retry fetching user with new token
-                await this.fetchUser();
-              }
+            // Try to use the token to fetch user
+            try {
+              await this.fetchUser();
+            } catch (error) {
+              // If there's any error with the token, try refreshing
+              console.log('Stored token might be expired, trying refresh');
+              await this.refreshAccessToken();
             }
+          } else {
+            // No access token but we have refresh token
+            console.log('No access token found, trying to refresh');
+            await this.refreshAccessToken();
           }
         }
       }
@@ -207,7 +180,7 @@ export const useAuthStore = defineStore('auth', {
       const config = useRuntimeConfig();
       
       try {
-        // Send remember me preference to backend before starting OAuth flow
+        // Set in session as a backup
         await fetch(`${config.public.apiBaseUrl}/auth/remember-me`, {
           method: 'POST',
           headers: {
@@ -217,12 +190,12 @@ export const useAuthStore = defineStore('auth', {
           body: JSON.stringify({ rememberMe: this.rememberMe }),
         });
         
-        // Redirect to Google OAuth
-        window.location.href = `${config.public.apiBaseUrl}/auth/google`;
+        // Important: Add remember_me to the URL query parameter
+        window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${this.rememberMe}`;
       } catch (error) {
         console.error('Failed to set remember me preference:', error);
-        // Still redirect even if preference setting fails
-        window.location.href = `${config.public.apiBaseUrl}/auth/google`;
+        // Still include the parameter in the URL as the primary method
+        window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${this.rememberMe}`;
       }
     },
     

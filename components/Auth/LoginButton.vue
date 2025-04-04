@@ -13,7 +13,7 @@
       <input 
         type="checkbox" 
         id="remember-me" 
-        v-model="rememberMe" 
+        v-model="localRememberMe" 
         class="h-4 w-4 text-blue-600 rounded border-gray-300"
       />
       <label for="remember-me" class="ml-2 text-sm text-gray-700">
@@ -24,18 +24,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRuntimeConfig } from '#app';
-import { useAuthStore } from '~/stores/auth'; // Update path as needed
+import { useAuthStore } from '~/stores/auth'; // Direct access to store is more reliable here
 
 const config = useRuntimeConfig();
-const authStore = useAuthStore();
+const authStore = useAuthStore(); // Using store directly
 const loginInProgress = ref(false);
 
-// Use computed property to create two-way binding with the store
-const rememberMe = computed({
-  get: () => authStore.rememberMe,
-  set: (value) => authStore.setRememberMe(value)
+// Use a local variable for the checkbox
+const localRememberMe = ref(authStore.rememberMe);
+
+// Watch for changes to update the store
+watch(localRememberMe, (newValue) => {
+  authStore.setRememberMe(newValue);
+});
+
+// Also make sure we're in sync with the store initially
+onMounted(() => {
+  localRememberMe.value = authStore.rememberMe;
 });
 
 const login = async () => {
@@ -44,17 +51,24 @@ const login = async () => {
   loginInProgress.value = true;
   
   try {
-    // Store preference in localStorage as a backup
-    if (process.client) {
-      localStorage.setItem('oauth_remember_me', rememberMe.value.toString());
-    }
+    console.log('Sending remember me preference:', localRememberMe.value);
     
-    // Simply redirect to the Google auth endpoint with the remember me parameter
-    window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${rememberMe.value}`;
+    // First, ensure remember-me preference is set in session
+    await fetch(`${config.public.apiBaseUrl}/auth/remember-me`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ rememberMe: localRememberMe.value }),
+    });
+    
+    // Then redirect to Google OAuth with the remember_me parameter
+    window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${localRememberMe.value}`;
   } catch (error) {
     console.error('Error starting login flow:', error);
-    // Fallback for errors
-    window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${rememberMe.value}`;
+    // Fallback still includes the remember_me parameter
+    window.location.href = `${config.public.apiBaseUrl}/auth/google?remember_me=${localRememberMe.value}`;
   } finally {
     loginInProgress.value = false;
   }

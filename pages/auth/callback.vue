@@ -21,12 +21,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '~/stores/auth';
+import { useAuth } from '~/composables/useAuth'; // Updated to use the composable
 import { useRuntimeConfig } from '#app';
+import { useAuthStore } from '~/stores/auth';
 
 const route = useRoute();
 const router = useRouter();
-const authStore = useAuthStore();
+const auth = useAuth(); // Use the auth composable
 const loading = ref(true);
 const error = ref<string | null>(null);
 
@@ -46,25 +47,36 @@ onMounted(async () => {
     console.log('Auth result:', authResult);
     
     // Check for access_token (new format) or token (old format)
-    if (authResult.access_token || authResult.token) {
-      const token = authResult.access_token || authResult.token;
+    const token = authResult.access_token || authResult.token;
+    if (token) {
+      // Using the auth store through the composable
+      // Store the token
+      auth.isAuthenticated; // Access the computed property to make sure the store is initialized
+      const authStore = useAuthStore(); // Get direct access to store for setting values
       
-      // Store the token and user data
       authStore.setToken(token);
       
       // Handle the remember me flag if present
       if (authResult.rememberMe !== undefined) {
         authStore.setRememberMe(authResult.rememberMe);
+        console.log('Remember me set to:', authResult.rememberMe);
       }
       
       // Handle refresh token if present
       if (authResult.refresh_token) {
         authStore.setRefreshToken(authResult.refresh_token);
+        console.log('Refresh token stored');
       }
       
       // Set user data
       if (authResult.user) {
         authStore.setUser(authResult.user);
+      }
+      
+      // Check if all data is properly stored in localStorage when "remember me" is enabled
+      if (authResult.rememberMe && process.client) {
+        console.log('Token in localStorage:', localStorage.getItem('token'));
+        console.log('Refresh token in localStorage:', localStorage.getItem('refreshToken'));
       }
       
       // Redirect to profile page

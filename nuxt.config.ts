@@ -7,6 +7,11 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
   ],
 
+  // Add the plugins array with the auth plugin
+  plugins: [
+    '~/plugins/auth.ts'
+  ],
+
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:3001',
