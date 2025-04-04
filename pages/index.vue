@@ -1,5 +1,7 @@
 <template>
-    <div>
+    <div
+    class=""
+    >
       <Header 
         title="MTG Collector" 
         subtitle="Track your Magic: The Gathering cards for tournaments"
@@ -57,3 +59,10 @@
     await authStore.initAuth();
   });
   </script>
+  
+<style scoped>
+.h-100vh{
+  min-height: 100vh;
+}
+
+</style>

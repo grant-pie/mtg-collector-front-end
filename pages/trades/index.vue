@@ -21,9 +21,16 @@
         <div class="text-5xl mb-4">🃏</div>
         <h3 class="text-xl font-medium mb-2">No trades yet</h3>
         <p class="text-gray-600 mb-6">Start trading cards with other collectors!</p>
-        <NuxtLink to="/cards" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded transition">
+        <div class="flex flex-col w-40 mx-auto">
+          <NuxtLink to="/cards" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded transition">
           Browse Cards
-        </NuxtLink>
+          </NuxtLink>
+
+          <!-- Create new trade button -->
+          <NuxtLink to="/trades/create" class="mt-5 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded transition">
+            <span class="material-icons">Start Trade</span>
+          </NuxtLink>
+        </div>
       </div>
   
       <!-- Tabs -->
@@ -162,12 +169,7 @@
         <button @click="activeTab = 'all'" class="text-blue-500 hover:text-blue-600 mt-2">View all trades</button>
       </div>
       
-      <!-- Create new trade button -->
-      <div class="fixed bottom-6 right-6">
-        <NuxtLink to="/trades/create" class="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 shadow-lg flex items-center justify-center transition">
-          <span class="material-icons">add</span>
-        </NuxtLink>
-      </div>
+
     </div>
   </template>
   
