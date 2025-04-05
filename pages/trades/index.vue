@@ -4,6 +4,11 @@
         <h1 class="text-2xl font-bold">My Trades</h1>
         <p class="text-gray-600">Manage your card trade offers</p>
       </div>
+
+      <!-- Create new trade button -->
+      <NuxtLink to="/trades/create" class=" bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded transition">
+        <span class="material-icons">Start Trade</span>
+      </NuxtLink>
   
       <!-- Loading state -->
       <div v-if="tradeStore.loading" class="flex justify-center my-10">
@@ -24,11 +29,6 @@
         <div class="flex flex-col w-40 mx-auto">
           <NuxtLink to="/cards" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded transition">
           Browse Cards
-          </NuxtLink>
-
-          <!-- Create new trade button -->
-          <NuxtLink to="/trades/create" class="mt-5 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded transition">
-            <span class="material-icons">Start Trade</span>
           </NuxtLink>
         </div>
       </div>
