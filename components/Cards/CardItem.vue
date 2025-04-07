@@ -32,6 +32,7 @@
         <div v-if="card.revealed || isAdmin" class="text-sm">
           <p v-if="card.cardDetails.manaCost">Mana Cost: {{ card.cardDetails.manaCost }}</p>
           <p v-if="card.cardDetails.rarity">Rarity: {{ card.cardDetails.rarity }}</p>
+          <p >Willing to Trade: {{ card.willingToTrade }}</p>
           <p v-if="card.createdAt">Received: {{ formattedCreatedAt }}</p>
           <p v-if="isAdmin">Revealed: {{ card.revealed }}</p>
         </div>
@@ -61,6 +62,14 @@
       >
         Reveal
       </button>
+
+      <button 
+        v-else 
+        @click="setWillingToTrade" 
+        class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+      >
+        {{ card.willingToTrade ? 'Unwilling to Trade' : 'Willing To Trade'  }}
+      </button>
     </div>
     <div v-if="actions">
       <button 
@@ -84,6 +93,7 @@ const cardStore = useCardStore();
 const authStore = useAuthStore();
 const isLoading = ref(false);
 
+
 // Check if user is admin
 const isAdmin = computed(() => {
   return authStore.isAdmin;
@@ -104,7 +114,10 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['onClickAction', 'cardRevealed']);
+const emit = defineEmits(['onClickAction', 'cardRevealed', 'cardUpdateWillingToTrade']);
+onMounted(() => {
+  console.log(props.card);
+});
 
 const formattedCreatedAt = computed(() => {
   const date = new Date(props.card.createdAt);
@@ -126,6 +139,25 @@ async function revealCard() {
     emit('cardRevealed', props.card);
   } catch (error) {
     console.error('Failed to reveal card:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// Function to set willing to trade
+async function setWillingToTrade() {
+  if (isLoading.value) return;
+  
+  try {
+    isLoading.value = true;
+    
+    // Call the store method to reveal the card
+    await cardStore.setWillingToTrade(props.card.id, props.userId || props.card.userId, props.card.willingToTrade);
+    
+    // Emit event to notify parent that card was revealed
+    emit('cardUpdateWillingToTrade', props.card);
+  } catch (error) {
+    console.error('Failed to set willing to trade:', error);
   } finally {
     isLoading.value = false;
   }

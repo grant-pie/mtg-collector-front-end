@@ -18,7 +18,8 @@
         </div>
         
         <UserCardsList 
-        :userId="user?.id"/>
+        :userId="user?.id"
+        />
       </template>
     </div>
   </div>

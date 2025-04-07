@@ -406,6 +406,38 @@ export const useCardStore = defineStore('card', {
         this.loading = false;
       }
     },
+
+    async setWillingToTrade(cardId: string, userId: string, willingToTrade: boolean) {
+      const authStore = useAuthStore();
+      const config = useRuntimeConfig();
+      if (!authStore.token) return;
+
+      console.log(willingToTrade);
+    
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/${cardId}/trade-willing`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${authStore.token}`
+          },
+          body: {
+            'willingToTrade' : !willingToTrade
+          }
+        });
+        
+        // Refresh the cards list - maintain current page and limit
+        await this.fetchUserCards(userId, this.pagination.currentPage, this.pagination.itemsPerPage);
+        return response.userCard;
+      } catch (err: any) {
+        console.error('Error revealing card:', err);
+        this.error = err.message || 'Failed to reveal card';
+      } finally {
+        this.loading = false;
+      }
+    },
     
     async searchCards(query: Record<string, any>) {
       const authStore = useAuthStore();
