@@ -1,0 +1,1 @@
+import{L as i,l as s,M as u,N as o}from"./Bn2rUa-8.js";const c=i(async n=>{let e,a;const t=s();if(t.isAuthenticated||([e,a]=u(()=>t.initAuth()),await e,a()),!t.isAuthenticated)return o("/login")});export{c as default};
