@@ -102,12 +102,13 @@ export const useAuthStore = defineStore('auth', {
     
     async refreshAccessToken(): Promise<boolean> {
       if (!this.refreshToken) {
-        this.logout();
+        console.log('No refresh token available');
         return false;
       }
       
       try {
         const config = useRuntimeConfig();
+        console.log('Attempting to refresh token with:', this.refreshToken.slice(0, 5) + '...');
         
         // Use $fetch which is Nuxt's wrapper around fetch
         const data = await $fetch(`${config.public.apiBaseUrl}/auth/refresh-token`, {
@@ -115,9 +116,11 @@ export const useAuthStore = defineStore('auth', {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: { refreshToken: this.refreshToken }, // $fetch automatically stringifies
+          body: { refreshToken: this.refreshToken },
           credentials: 'include'
         });
+        
+        console.log('Refresh token response received:', !!data.access_token);
         
         // Handle the response
         if (data.access_token) {
@@ -134,7 +137,10 @@ export const useAuthStore = defineStore('auth', {
         return false;
       } catch (error) {
         console.error('Token refresh failed:', error);
-        this.logout();
+        // Only logout if this isn't just a network error
+        if (error.response && error.response.status >= 400) {
+          this.logout();
+        }
         return false;
       }
     },
@@ -151,26 +157,55 @@ export const useAuthStore = defineStore('auth', {
         const storedToken = localStorage.getItem('token');
         const storedRefreshToken = localStorage.getItem('refreshToken');
         
-        if (storedRefreshToken) {
-          // We have a refresh token, set it in store
-          this.refreshToken = storedRefreshToken;
-          
-          if (storedToken) {
-            // We also have an access token, set it
-            this.token = storedToken;
+        // Check if token is expired by decoding it
+        let isTokenExpired = true;
+        if (storedToken) {
+          try {
+            // Parse JWT payload
+            const payload = JSON.parse(atob(storedToken.split('.')[1]));
+            // Check if token is expired
+            isTokenExpired = payload.exp * 1000 < Date.now();
             
-            // Try to use the token to fetch user
-            try {
-              await this.fetchUser();
-            } catch (error) {
-              // If there's any error with the token, try refreshing
-              console.log('Stored token might be expired, trying refresh');
-              await this.refreshAccessToken();
-            }
+            console.log('Stored token expired:', isTokenExpired);
+          } catch (error) {
+            console.error('Error parsing stored token:', error);
+            isTokenExpired = true;
+          }
+        }
+        
+        // If we have a refresh token and either no token or expired token
+        if (storedRefreshToken && (isTokenExpired || !storedToken)) {
+          console.log('Need to refresh the token');
+          // Try to refresh the token first
+          const refreshSuccess = await this.refreshAccessToken();
+          
+          if (refreshSuccess) {
+            console.log('Token refresh successful');
+            return; // We're authenticated now
           } else {
-            // No access token but we have refresh token
-            console.log('No access token found, trying to refresh');
-            await this.refreshAccessToken();
+            console.log('Token refresh failed');
+            // Clear any invalid tokens
+            this.token = null;
+            this.refreshToken = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+          }
+        } else if (storedToken && !isTokenExpired) {
+          // Valid token exists, use it
+          this.token = storedToken;
+          if (storedRefreshToken) {
+            this.refreshToken = storedRefreshToken;
+          }
+          
+          // Fetch user data with the token
+          try {
+            await this.fetchUser();
+            console.log('User fetched successfully with stored token');
+          } catch (error) {
+            console.error('Error fetching user with valid token:', error);
+            // Token might still be invalid for some reason
+            this.token = null;
+            localStorage.removeItem('token');
           }
         }
       }

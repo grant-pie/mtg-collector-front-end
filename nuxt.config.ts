@@ -9,7 +9,8 @@ export default defineNuxtConfig({
 
   // Add the plugins array with the auth plugin
   plugins: [
-    '~/plugins/auth.ts'
+    '~/plugins/auth.ts',
+    '~/plugins/token-refresh.ts'
   ],
 
   runtimeConfig: {
