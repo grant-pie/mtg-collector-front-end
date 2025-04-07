@@ -4,6 +4,35 @@
     <div class="mb-6 bg-white p-4 rounded-lg shadow">
       <h3 class="text-lg font-medium mb-4">Search Cards</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Willing to Trade</label>
+          <input 
+              type="radio" 
+              value="true" 
+              v-model="searchParams.willingToTrade" 
+              name="willing_to_trade"
+              class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          <label for="true" class="ml-1">Willing</label>
+          <input 
+              type="radio" 
+              value="false" 
+              v-model="searchParams.willingToTrade" 
+              name="willing_to_trade"
+              class="ml-2 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          <label for="false" class="ml-1">Unwilling</label>
+          <input 
+              type="radio" 
+              value="" 
+              v-model="searchParams.willingToTrade" 
+              name="willing_to_trade"
+              class="ml-2 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          <label for="" class="ml-1">Any</label>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700">Card Name</label>
           <input 
@@ -371,8 +400,8 @@ const searchParams = ref({
   minPower: '',
   minToughness: '',
   text: '',
-  artist: '',
   createdAt: '',
+  willingToTrade: '',
   createdAtStart: '',
   createdAtEnd: '',
   orderBy: '',
@@ -623,7 +652,7 @@ const resetSearch = async () => {
     minToughness: '',
     text: '',
     artist: '',
-    revealed: '', // Reset the revealed filter
+    willingToTrade: '',
     createdAt: '',
     createdAtStart: '',
     createdAtEnd: '',

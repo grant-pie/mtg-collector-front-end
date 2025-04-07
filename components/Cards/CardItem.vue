@@ -56,7 +56,7 @@
       
       <!-- Reveal button shown only if card is not revealed -->
       <button 
-        v-if="!card.revealed" 
+        v-if="!card.revealed && currentUser === userId" 
         @click="revealCard" 
         class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
       >
@@ -64,7 +64,7 @@
       </button>
 
       <button 
-        v-else 
+      v-if="card.revealed && currentUser === userId" 
         @click="setWillingToTrade" 
         class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
       >
@@ -114,10 +114,13 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['onClickAction', 'cardRevealed', 'cardUpdateWillingToTrade']);
-onMounted(() => {
-  console.log(props.card);
+const currentUser = computed(() => {
+
+  return authStore.userId;
 });
+
+const emit = defineEmits(['onClickAction', 'cardRevealed', 'cardUpdateWillingToTrade']);
+
 
 const formattedCreatedAt = computed(() => {
   const date = new Date(props.card.createdAt);

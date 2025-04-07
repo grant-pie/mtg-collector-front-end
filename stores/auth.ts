@@ -38,6 +38,10 @@ export const useAuthStore = defineStore('auth', {
     
     isAdmin(): boolean {
       return this.user?.role === 'admin';
+    },
+
+    userId(): string {
+      return this.user != null && this.user.id != null ? this.user.id : '';
     }
   },
   
