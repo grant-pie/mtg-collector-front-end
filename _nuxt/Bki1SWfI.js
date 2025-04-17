@@ -1,0 +1,1 @@
+import{M as i,g as s,N as u,O as o}from"./DdnAVgIr.js";const c=i(async n=>{let e,a;const t=s();if(t.isAuthenticated||([e,a]=u(()=>t.initAuth()),await e,a()),!t.isAuthenticated)return o("/login")});export{c as default};
