@@ -93,7 +93,9 @@ export const useTradeStore = defineStore('trade', {
           }
         });
         
+      
         this.trades = response.trades;
+  
       } catch (err) {
         console.error('Error fetching trades:', err);
         this.error = 'Failed to load trades';

@@ -104,7 +104,13 @@
                 </h4>
                 <div class="grid grid-cols-3 gap-2">
                   <div v-for="cardId in trade.initiatorCards" :key="cardId" class="border rounded p-1 text-center">
-                    <div class="text-xs">Card ID: {{ truncateId(cardId) }}</div>
+                    <div v-if="cardDetails[cardId]">
+                      <span class="text-sm mr-2">
+                        {{ cardDetails[cardId].cardDetails.name }}
+                      </span>
+                      <img v-if="cardDetails[cardId]" :src="cardDetails[cardId].cardDetails.imageUrl"></img>
+                    </div>
+                    <div v-else class="text-xs">Card ID: {{ truncateId(cardId) }}</div>
                   </div>
                   <div v-if="trade.initiatorCards.length === 0" class="text-gray-500 text-sm">No cards</div>
                 </div>
@@ -116,7 +122,13 @@
                 </h4>
                 <div class="grid grid-cols-3 gap-2">
                   <div v-for="cardId in trade.receiverCards" :key="cardId" class="border rounded p-1 text-center">
-                    <div class="text-xs">Card ID: {{ truncateId(cardId) }}</div>
+                    <div v-if="cardDetails[cardId]">
+                      <span class="text-sm mr-2">
+                        {{ cardDetails[cardId].cardDetails.name }}
+                      </span>
+                      <img v-if="cardDetails[cardId]" :src="cardDetails[cardId].cardDetails.imageUrl"></img>
+                    </div>
+                    <div v-else class="text-xs">Card ID: {{ truncateId(cardId) }}</div>
                   </div>
                   <div v-if="trade.receiverCards.length === 0" class="text-gray-500 text-sm">No cards</div>
                 </div>
@@ -182,21 +194,57 @@
   const tradeStore = useTradeStore();
   const userStore = useUserStore();
   const authStore = useAuthStore();
+  const cardStore = useCardStore();
   
   const activeTab = ref('all');
-  
+  const cardDetails = ref({});
+  const loadingCardDetails = ref(false);
   // Fetch all trades and usernames on page load
   onMounted(async () => {
     await Promise.all([
       tradeStore.fetchAllTrades(),
       userStore.fetchAllUsernames()
     ]);
+
+    fetchAllCardDetails()
+    
   });
-  
+
+  const fetchAllCardDetails = async () => {
+    console.log(tradeStore.trades);
+    const trades = tradeStore.trades;
+    if (!trades) return;
+    loadingCardDetails.value = true;
+    
+    const allCardIds = [];
+    trades.forEach(trade => {
+      
+      trade.initiatorCards.forEach((cardId) => {
+        allCardIds.push(cardId);
+      });
+
+      trade.receiverCards.forEach((cardId) => {
+        allCardIds.push(cardId);
+      });
+
+    });
+
+    // Fetch details for each card
+    for (const cardId of allCardIds) {
+      if (!cardDetails.value[cardId]) {
+        const cardInfo = await cardStore.fetchCardById(cardId);
+        if (cardInfo) {
+          cardDetails.value[cardId] = cardInfo;
+        }
+      }
+    }
+
+    loadingCardDetails.value = false;
+};
+
   // Get displayed trades based on active tab
   const displayedTrades = computed(() => {
     if (activeTab.value === 'all') {
-      console.log(tradeStore.trades);
       return tradeStore.trades;
     } else if (activeTab.value === 'pending') {
       return tradeStore.trades.filter(trade => trade.status === TradeStatus.PENDING);

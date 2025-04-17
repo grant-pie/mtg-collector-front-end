@@ -96,8 +96,10 @@
               class="border rounded-lg p-3 bg-gray-50"
             >
               <div v-if="cardDetails[cardId]" class="mb-1">
-                <p class="text-sm font-medium">{{ cardDetails[cardId].cardDetails.name }}</p>
-                <p class="text-xs text-gray-500">ID: {{ truncateId(cardId) }}</p>
+                <span class="text-sm mr-2">
+                  {{ cardDetails[cardId].cardDetails.name }}
+                </span>
+                <img v-if="cardDetails[cardId]" :src="cardDetails[cardId].cardDetails.imageUrl"></img>
               </div>
               <div v-else class="flex items-center">
                 <div class="animate-pulse h-4 w-24 bg-gray-200 rounded mb-1"></div>
@@ -132,8 +134,10 @@
               class="border rounded-lg p-3 bg-gray-50"
             >
               <div v-if="cardDetails[cardId]" class="mb-1">
-                <p class="text-sm font-medium">{{ cardDetails[cardId].cardDetails.name }}</p>
-                <p class="text-xs text-gray-500">ID: {{ truncateId(cardId) }}</p>
+                <span class="text-sm mr-2">
+                  {{ cardDetails[cardId].cardDetails.name }}
+                </span>
+                <img v-if="cardDetails[cardId]" :src="cardDetails[cardId].cardDetails.imageUrl"></img>
               </div>
               <div v-else class="flex items-center">
                 <div class="animate-pulse h-4 w-24 bg-gray-200 rounded mb-1"></div>
