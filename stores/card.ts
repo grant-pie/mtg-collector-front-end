@@ -37,6 +37,9 @@ interface PaginationMeta {
   currentPage: number;
 }
 
+interface TradingCard extends UserCard {
+  username?: string;
+}
 // Valid page size options as defined in user-card.controller.ts
 const VALID_PAGE_SIZES = [10, 20, 50];
 const DEFAULT_PAGE_SIZE = 10;
@@ -54,7 +57,16 @@ export const useCardStore = defineStore('card', {
       totalPages: 0,
       currentPage: 1
     } as PaginationMeta,
-    validPageSizes: VALID_PAGE_SIZES
+    validPageSizes: VALID_PAGE_SIZES,
+    tradingMarketplace: [] as TradingCard[],
+    tradingPagination: {
+      totalItems: 0,
+      itemCount: 0,
+      itemsPerPage: 10,
+      totalPages: 0,
+      currentPage: 1
+    } as PaginationMeta,
+
   }),
   
   actions: {
@@ -491,6 +503,77 @@ export const useCardStore = defineStore('card', {
       } catch (err: any) {
         console.error('Error fetching card details:', err);
         return null;
+      }
+    },
+
+    async fetchTradingMarketplace(searchParams: Record<string, any> = {}) {
+      const config = useRuntimeConfig();
+      
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        // Set default pagination values if not provided
+        if (searchParams.page === undefined) {
+          searchParams.page = 1;
+        }
+        if (searchParams.limit === undefined) {
+          searchParams.limit = 10;
+        }
+        
+        // Build query string
+        const queryParams = new URLSearchParams();
+        for (const [key, value] of Object.entries(searchParams)) {
+          if (value !== undefined && value !== null && value !== '') {
+            // Handle array values (like colors)
+            if (Array.isArray(value)) {
+              value.forEach((item: string) => {
+                queryParams.append(key, item);
+              });
+            } else {
+              queryParams.append(key, value.toString());
+            }
+          }
+        }
+        
+        const queryString = queryParams.toString();
+        let url = `${config.public.apiBaseUrl}/user-cards/trading/marketplace`;
+        if (queryString) {
+          url += `?${queryString}`;
+        }
+        
+        const response = await $fetch(url, {
+          method: 'GET'
+        });
+        
+        this.tradingMarketplace = response.tradingCards || [];
+        this.tradingPagination = response.pagination || this.tradingPagination;
+        return this.tradingMarketplace;
+      } catch (err: any) {
+        console.error('Error fetching trading marketplace:', err);
+        this.error = err.message || 'Failed to fetch trading marketplace';
+        return [];
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async goToTradingPage(page: number, searchParams: Record<string, any> = {}) {
+      if (page < 1 || page > this.tradingPagination.totalPages) return;
+      
+      const params = { ...searchParams, page };
+      await this.fetchTradingMarketplace(params);
+    },
+    
+    async nextTradingPage(searchParams: Record<string, any> = {}) {
+      if (this.tradingPagination.currentPage < this.tradingPagination.totalPages) {
+        await this.goToTradingPage(this.tradingPagination.currentPage + 1, searchParams);
+      }
+    },
+    
+    async prevTradingPage(searchParams: Record<string, any> = {}) {
+      if (this.tradingPagination.currentPage > 1) {
+        await this.goToTradingPage(this.tradingPagination.currentPage - 1, searchParams);
       }
     }
   }

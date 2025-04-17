@@ -14,6 +14,13 @@
         </NuxtLink>
         <NuxtLink 
           v-if="isAuthenticated" 
+          to="/marketplace" 
+          class="hover:text-blue-300"
+        >
+          Marketplace
+        </NuxtLink>
+        <NuxtLink 
+          v-if="isAuthenticated" 
           to="/profile" 
           class="hover:text-blue-300"
         >
