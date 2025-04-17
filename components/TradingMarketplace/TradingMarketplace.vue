@@ -159,7 +159,7 @@
             <div class="p-4">
               <h3 class="font-bold text-lg">{{ card.cardDetails.name }}</h3>
               <p class="text-sm text-gray-600">{{ card.cardDetails.type }}</p>
-              <p class="text-sm text-gray-600">Set: {{ card.cardDetails.setName || card.cardDetails.set }} ({{ card.cardDetails.rarity }})</p>
+              <p class="text-sm text-gray-600">{{ card.cardDetails.rarity }}</p>
               <div class="mt-2 flex justify-between items-center">
                 <span class="text-sm font-semibold">Trader: {{ card.username }}</span>
               </div>
