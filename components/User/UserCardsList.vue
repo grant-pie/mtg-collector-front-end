@@ -4,7 +4,18 @@
     <div class="mb-6 bg-white p-4 rounded-lg shadow">
       <h3 class="text-lg font-medium mb-4">Search Cards</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Card Options</label>
+          <div class="mt-1 flex items-center">
+            <input 
+              type="checkbox" 
+              v-model="searchParams.hideBasicLands" 
+              id="hideBasicLands"
+              class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+            <label for="hideBasicLands" class="ml-2 text-sm text-gray-700">Hide Basic Lands</label>
+          </div>
+        </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Willing to Trade</label>
           <input 
@@ -406,6 +417,7 @@ const searchParams = ref({
   createdAtEnd: '',
   orderBy: '',
   orderDirection: 'ASC',
+  hideBasicLands: true, // Added this line with default value of true
   page: 1,
   limit: 10
 });
@@ -484,16 +496,17 @@ const formatDateForApi = (dateString) => {
 // Load cards on component mount
 onMounted(async () => {
   if (props.userId) {
-    await cardStore.fetchUserCards(props.userId, 1, itemsPerPage.value);
+    await cardStore.fetchUserCards(props.userId, 1, itemsPerPage.value, { hideBasicLands: true });
   }
 
   if (props.userName) {
     await cardStore.fetchCardsByUsername(props.userName, { 
       page: 1, 
-      limit: itemsPerPage.value 
+      limit: itemsPerPage.value,
+      hideBasicLands: true // Apply filtering by default
     });
   }
-});
+});;
 
 // Refetch cards when userId changes
 watch(() => props.userId, async (newUserId) => {
@@ -658,6 +671,7 @@ const resetSearch = async () => {
     createdAtEnd: '',
     orderBy: '',
     orderDirection: 'ASC',
+    hideBasicLands: true, // Keep this enabled by default on reset
     page: 1,
     limit: itemsPerPage.value
   };
@@ -668,7 +682,8 @@ const resetSearch = async () => {
   } else if (props.userName) {
     await cardStore.fetchCardsByUsername(props.userName, { 
       page: 1, 
-      limit: itemsPerPage.value 
+      limit: itemsPerPage.value,
+      hideBasicLands: true // Also pass this parameter on initial fetch
     });
   }
 };

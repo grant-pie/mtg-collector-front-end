@@ -97,7 +97,7 @@ export const useCardStore = defineStore('card', {
       }
     },
 
-    async fetchUserCards(userId: string, page = 1, limit = 10) {
+    async fetchUserCards(userId: string, page = 1, limit = 10, params = {}) {
       const authStore = useAuthStore();
       const config = useRuntimeConfig();
       if (!authStore.token) return;
@@ -109,14 +109,34 @@ export const useCardStore = defineStore('card', {
         // Validate the limit value against allowed page sizes
         const validatedLimit = this.validatePageSize(limit);
         
-        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/user/${userId}`, {
+        // Merge pagination with additional params (for hideBasicLands)
+        const queryParams = {
+          page,
+          limit: validatedLimit,
+          ...params
+        };
+        
+        // Build query string
+        const queryString = new URLSearchParams();
+        for (const [key, value] of Object.entries(queryParams)) {
+          if (value !== undefined && value !== null && value !== '') {
+            // Handle array values
+            if (Array.isArray(value)) {
+              value.forEach((item: string) => {
+                queryString.append(key, item);
+              });
+            } else {
+              queryString.append(key, value.toString());
+            }
+          }
+        }
+        
+        const url = `${config.public.apiBaseUrl}/user-cards/user/${userId}${queryString.toString() ? `?${queryString.toString()}` : ''}`;
+        
+        const response = await $fetch(url, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authStore.token}`
-          },
-          params: {
-            page,
-            limit: validatedLimit
           }
         });
         
@@ -519,6 +539,11 @@ export const useCardStore = defineStore('card', {
         }
         if (searchParams.limit === undefined) {
           searchParams.limit = 10;
+        }
+        
+        // Set hideBasicLands to true by default if not specified
+        if (searchParams.hideBasicLands === undefined) {
+          searchParams.hideBasicLands = true;
         }
         
         // Build query string
