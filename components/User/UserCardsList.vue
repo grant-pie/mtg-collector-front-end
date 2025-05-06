@@ -281,6 +281,8 @@
           :userId="userId"
           :actions="cardActions"
           @onClickAction="emitOnClickAction" 
+          @cardRevealed="handleCardRevealed"
+          @cardUpdateWillingToTrade="handleCardUpdateWillingToTrade"
         />
         <div v-if="isCardInDeck(card)" class="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center">
           <p class="text-lg font-bold text-gray-800">Selected</p>
@@ -698,7 +700,50 @@ const resetSearch = async () => {
   }
 };
 
-const emitOnClickAction = (actionAndCardObj) =>{
-  emit('onClickAction', actionAndCardObj)
-}
+const emitOnClickAction = async (actionAndCardObj) => {
+  const { action, card } = actionAndCardObj;
+  
+  try {
+    // Check if we're revealing a card
+    if (action === 'Reveal') {
+      // Call the revealCard method with the right IDs
+      const updatedCard = await cardStore.revealCard(card.id, props.userId || card.userId);
+      
+      // If the response doesn't have complete card details, refresh the full list
+      if (!updatedCard || !updatedCard.cardDetails) {
+        await performSearch();
+      }
+    } 
+    // Check if we're toggling trade status
+    else if (action === 'Willing To Trade' || action === 'Unwilling to Trade') {
+      const updatedCard = await cardStore.setWillingToTrade(
+        card.id, 
+        props.userId || card.userId, 
+        card.willingToTrade
+      );
+      
+      // If the response doesn't have complete card details, refresh the full list
+      if (!updatedCard || !updatedCard.cardDetails) {
+        await performSearch();
+      }
+    } 
+    // For other actions, pass through to parent
+    else {
+      emit('onClickAction', actionAndCardObj);
+    }
+  } catch (error) {
+    console.error(`Error processing action ${action}:`, error);
+    // On error, refresh the list to ensure we have the latest state
+    await performSearch();
+  }
+};
+
+// Add event handlers for CardItem events
+const handleCardRevealed = (updatedCard) => {
+  console.log('Card revealed:', updatedCard.id);
+};
+
+const handleCardUpdateWillingToTrade = (updatedCard) => {
+  console.log('Card trading status updated:', updatedCard.id);
+};
 </script>

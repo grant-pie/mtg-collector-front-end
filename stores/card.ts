@@ -75,6 +75,7 @@ export const useCardStore = defineStore('card', {
       this.loading = status;
     },
 
+    
     async fetchCardById(cardId: string) {
       const authStore = useAuthStore();
       const config = useRuntimeConfig();
@@ -137,7 +138,7 @@ export const useCardStore = defineStore('card', {
         
         const url = `${config.public.apiBaseUrl}/user-cards/user/${userId}${queryString.toString() ? `?${queryString.toString()}` : ''}`;
         
-        // UPDATED: Use useFetch with SPA-friendly options
+        // UPDATED: Use useFetch with SPA-friendly options - removed invalid 'redirect: false'
         const { data, error } = await useFetch(url, {
           method: 'GET',
           headers: {
@@ -145,9 +146,7 @@ export const useCardStore = defineStore('card', {
           },
           // Key parameters to prevent page refresh
           watch: false,
-          key: `user-cards-${userId}-${JSON.stringify(queryParams)}`,
-          // Disable redirects that could cause page reloads
-          redirect: false
+          key: `user-cards-${userId}-${JSON.stringify(queryParams)}`
         });
         
         if (error.value) {
@@ -207,14 +206,12 @@ export const useCardStore = defineStore('card', {
           url += `?${queryString}`;
         }
         
-        // UPDATED: Use useFetch with SPA-friendly options
+        // UPDATED: Use useFetch with SPA-friendly options - removed invalid 'redirect: false'
         const { data, error } = await useFetch(url, {
           method: 'GET',
           // Key parameters to prevent page refresh
           watch: false,
-          key: `username-cards-${username}-${JSON.stringify(searchParams)}`,
-          // Disable redirects that could cause page reloads
-          redirect: false
+          key: `username-cards-${username}-${JSON.stringify(searchParams)}`
         });
         
         if (error.value) {
@@ -272,7 +269,7 @@ export const useCardStore = defineStore('card', {
         const queryString = queryParams.toString();
         const url = `${config.public.apiBaseUrl}/user-cards/user/${userId}${queryString ? `?${queryString}` : ''}`;
         
-        // UPDATED: Use useFetch with SPA-friendly options
+        // UPDATED: Use useFetch with SPA-friendly options - removed invalid 'redirect: false'
         const { data, error } = await useFetch(url, {
           method: 'GET',
           headers: {
@@ -280,9 +277,7 @@ export const useCardStore = defineStore('card', {
           },
           // Key parameters to prevent page refresh
           watch: false, 
-          key: `search-user-cards-${userId}-${JSON.stringify(searchParams)}`,
-          // Disable redirects that could cause page reloads
-          redirect: false
+          key: `search-user-cards-${userId}-${JSON.stringify(searchParams)}`
         });
         
         if (error.value) {
@@ -464,11 +459,8 @@ export const useCardStore = defineStore('card', {
           headers: {
             'Authorization': `Bearer ${authStore.token}`
           },
-          // Key parameters to prevent page refresh
           watch: false,
-          key: `reveal-card-${cardId}`,
-          // Disable redirects that could cause page reloads
-          redirect: false
+          key: `reveal-card-${cardId}`
         });
         
         if (error.value) {
@@ -477,20 +469,30 @@ export const useCardStore = defineStore('card', {
         
         const response = data.value as any;
         
-        // Instead of refreshing the entire card list, just update the specific card in the state
         // Find the card index in the userCards array
         const cardIndex = this.userCards.findIndex(card => card.id === cardId);
         
         if (cardIndex !== -1) {
-          // Update just that one card in the array
+          // Get the current card to preserve any data that might not be in the response
+          const currentCard = this.userCards[cardIndex];
           const updatedCard = response.userCard;
+          
+          // Create merged card preserving cardDetails if missing in response
+          const mergedCard = {
+            ...currentCard,
+            ...updatedCard,
+            // Preserve cardDetails if they exist in current card but not in response
+            cardDetails: updatedCard.cardDetails || currentCard.cardDetails
+          };
           
           // Create a new array with the updated card to maintain reactivity
           const updatedCards = [...this.userCards];
-          updatedCards[cardIndex] = updatedCard;
+          updatedCards[cardIndex] = mergedCard;
           
           // Update the state
           this.userCards = updatedCards;
+          
+          return mergedCard;
         }
         
         return response.userCard;
@@ -507,12 +509,11 @@ export const useCardStore = defineStore('card', {
       const authStore = useAuthStore();
       const config = useRuntimeConfig();
       if (!authStore.token) return;
-
+    
       try {
         this.loading = true;
         this.error = null;
         
-        // Use useFetch with SPA-friendly options
         const { data, error } = await useFetch(`${config.public.apiBaseUrl}/user-cards/${cardId}/trade-willing`, {
           method: 'PATCH',
           headers: {
@@ -521,11 +522,8 @@ export const useCardStore = defineStore('card', {
           body: {
             'willingToTrade': !willingToTrade
           },
-          // Key parameters to prevent page refresh
           watch: false,
-          key: `trade-willing-${cardId}-${!willingToTrade}`,
-          // Disable redirects that could cause page reloads
-          redirect: false
+          key: `trade-willing-${cardId}-${!willingToTrade}`
         });
         
         if (error.value) {
@@ -534,20 +532,30 @@ export const useCardStore = defineStore('card', {
         
         const response = data.value as any;
         
-        // Instead of refreshing the entire card list, just update the specific card in the state
         // Find the card index in the userCards array
         const cardIndex = this.userCards.findIndex(card => card.id === cardId);
         
         if (cardIndex !== -1) {
-          // Update just that one card in the array
+          // Get the current card to preserve any data that might not be in the response
+          const currentCard = this.userCards[cardIndex];
           const updatedCard = response.userCard;
+          
+          // Create merged card preserving cardDetails if missing in response
+          const mergedCard = {
+            ...currentCard,
+            ...updatedCard,
+            // Preserve cardDetails if they exist in current card but not in response
+            cardDetails: updatedCard.cardDetails || currentCard.cardDetails
+          };
           
           // Create a new array with the updated card to maintain reactivity
           const updatedCards = [...this.userCards];
-          updatedCards[cardIndex] = updatedCard;
+          updatedCards[cardIndex] = mergedCard;
           
           // Update the state
           this.userCards = updatedCards;
+          
+          return mergedCard;
         }
         
         return response.userCard;
@@ -576,7 +584,7 @@ export const useCardStore = defineStore('card', {
           }
         }
         
-        // UPDATED: Use useFetch with SPA-friendly options
+        // UPDATED: Use useFetch with SPA-friendly options - removed invalid 'redirect: false'
         const { data, error } = await useFetch(`${config.public.apiBaseUrl}/cards?${queryParams.toString()}`, {
           method: 'GET',
           headers: {
@@ -584,9 +592,7 @@ export const useCardStore = defineStore('card', {
           },
           // Key parameters to prevent page refresh
           watch: false,
-          key: `search-cards-${JSON.stringify(query)}`,
-          // Disable redirects that could cause page reloads
-          redirect: false
+          key: `search-cards-${JSON.stringify(query)}`
         });
         
         if (error.value) {
@@ -666,14 +672,12 @@ export const useCardStore = defineStore('card', {
           url += `?${queryString}`;
         }
         
-        // UPDATED: Use useFetch with SPA-friendly options
+        // UPDATED: Use useFetch with SPA-friendly options - removed invalid 'redirect: false'
         const { data, error } = await useFetch(url, {
           method: 'GET',
           // Key parameters to prevent page refresh
           watch: false,
-          key: `trading-marketplace-${JSON.stringify(searchParams)}`,
-          // Disable redirects that could cause page reloads
-          redirect: false
+          key: `trading-marketplace-${JSON.stringify(searchParams)}`
         });
         
         if (error.value) {
@@ -712,4 +716,5 @@ export const useCardStore = defineStore('card', {
       }
     }
   }
+  
 });
