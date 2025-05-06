@@ -1,1 +1,0 @@
-import{Z as i,g as s,$ as u,a0 as o}from"./CubGIvn5.js";const c=i(async n=>{let e,a;const t=s();if(t.isAuthenticated||([e,a]=u(()=>t.initAuth()),await e,a()),!t.isAuthenticated)return o("/login")});export{c as default};
