@@ -57,25 +57,27 @@
       <!-- Reveal button shown only if card is not revealed -->
       <button 
         v-if="!card.revealed && currentUser === userId" 
-        @click="revealCard" 
+        @click.prevent="revealCard" 
         class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+        :disabled="isLoading"
       >
-        Reveal
+        {{ isLoading ? 'Revealing...' : 'Reveal' }}
       </button>
 
       <button 
-      v-if="card.revealed && currentUser === userId" 
-        @click="setWillingToTrade" 
+        v-if="card.revealed && currentUser === userId" 
+        @click.prevent="setWillingToTrade" 
         class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm"
+        :disabled="isLoading"
       >
-        {{ card.willingToTrade ? 'Unwilling to Trade' : 'Willing To Trade'  }}
+        {{ isLoading ? 'Updating...' : (card.willingToTrade ? 'Unwilling to Trade' : 'Willing To Trade') }}
       </button>
     </div>
     <div v-if="actions">
       <button 
         v-for="action in actions"
         :key="action"
-        @click="$emit('onClickAction', {action, card})" 
+        @click.prevent="$emit('onClickAction', {action, card})" 
         class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs"
       >
         {{action}}
@@ -92,7 +94,6 @@ import { onMounted, computed, ref } from 'vue';
 const cardStore = useCardStore();
 const authStore = useAuthStore();
 const isLoading = ref(false);
-
 
 // Check if user is admin
 const isAdmin = computed(() => {
@@ -115,7 +116,6 @@ const props = defineProps({
 });
 
 const currentUser = computed(() => {
-
   return authStore.userId;
 });
 
@@ -128,18 +128,22 @@ const formattedCreatedAt = computed(() => {
   return date.toISOString().split('T')[0];
 });
 
-// Function to reveal the card
+// Function to reveal the card - Updated to prevent page refresh
 async function revealCard() {
   if (isLoading.value) return;
   
   try {
     isLoading.value = true;
     
-    // Call the store method to reveal the card
-    await cardStore.revealCard(props.card.id, props.userId || props.card.userId);
+    // Call the store method to reveal the card, which now updates the local state directly
+    // without triggering a full refetch
+    const updatedCard = await cardStore.revealCard(props.card.id, props.userId || props.card.userId);
     
-    // Emit event to notify parent that card was revealed
-    emit('cardRevealed', props.card);
+    // Only emit the event to notify parent that card was revealed
+    // The actual UI update happens reactively due to store update
+    if (updatedCard) {
+      emit('cardRevealed', updatedCard);
+    }
   } catch (error) {
     console.error('Failed to reveal card:', error);
   } finally {
@@ -147,18 +151,24 @@ async function revealCard() {
   }
 }
 
-// Function to set willing to trade
+// Function to set willing to trade - Also updated for consistency
 async function setWillingToTrade() {
   if (isLoading.value) return;
   
   try {
     isLoading.value = true;
     
-    // Call the store method to reveal the card
-    await cardStore.setWillingToTrade(props.card.id, props.userId || props.card.userId, props.card.willingToTrade);
+    // Call the store method to update the trade status
+    const updatedCard = await cardStore.setWillingToTrade(
+      props.card.id, 
+      props.userId || props.card.userId, 
+      props.card.willingToTrade
+    );
     
-    // Emit event to notify parent that card was revealed
-    emit('cardUpdateWillingToTrade', props.card);
+    // Only emit event to notify parent of update
+    if (updatedCard) {
+      emit('cardUpdateWillingToTrade', updatedCard);
+    }
   } catch (error) {
     console.error('Failed to set willing to trade:', error);
   } finally {

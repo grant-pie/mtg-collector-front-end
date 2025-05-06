@@ -347,7 +347,7 @@
           <label class="text-sm text-gray-600">Items per page:</label>
           <select 
             v-model="itemsPerPage" 
-            @change="changeItemsPerPage"
+            @change.prevent="changeItemsPerPage($event)"
             class="rounded border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
           >
             <option value="10">10</option>
@@ -583,18 +583,28 @@ const goToPrevPage = async () => {
   }
 };
 
-const changeItemsPerPage = async () => {
+const changeItemsPerPage = async (event) => {
+  // Prevent default form submission behavior if an event was passed
+  if (event) event.preventDefault();
+  
   // Convert to number since v-model with select might give a string
   const limit = Number(itemsPerPage.value);
   searchParams.value.limit = limit;
   searchParams.value.page = 1; // Reset to page 1 when changing items per page
   
+  // Get clean search parameters
   const cleanParams = getCleanParams();
   
-  if (props.userId) {
-    await cardStore.searchUserCards(props.userId, cleanParams);
-  } else if (props.userName) {
-    await cardStore.fetchCardsByUsername(props.userName, cleanParams);
+  // Use the store's changeItemsPerPage method which has been updated to use useFetch
+  try {
+    if (props.userId) {
+      await cardStore.changeItemsPerPage(props.userId, limit, cleanParams);
+    } else if (props.userName) {
+      // Handle username case specifically - we need to extract username
+      await cardStore.fetchCardsByUsername(props.userName, cleanParams);
+    }
+  } catch (error) {
+    console.error("Error changing items per page:", error);
   }
 };
 

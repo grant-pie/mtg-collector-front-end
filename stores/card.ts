@@ -70,6 +70,10 @@ export const useCardStore = defineStore('card', {
   }),
   
   actions: {
+    // Helper method to set loading state
+    setLoading(status: boolean) {
+      this.loading = status;
+    },
 
     async fetchCardById(cardId: string) {
       const authStore = useAuthStore();
@@ -133,13 +137,24 @@ export const useCardStore = defineStore('card', {
         
         const url = `${config.public.apiBaseUrl}/user-cards/user/${userId}${queryString.toString() ? `?${queryString.toString()}` : ''}`;
         
-        const response = await $fetch(url, {
+        // UPDATED: Use useFetch with SPA-friendly options
+        const { data, error } = await useFetch(url, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authStore.token}`
-          }
+          },
+          // Key parameters to prevent page refresh
+          watch: false,
+          key: `user-cards-${userId}-${JSON.stringify(queryParams)}`,
+          // Disable redirects that could cause page reloads
+          redirect: false
         });
         
+        if (error.value) {
+          throw new Error(error.value.message || 'Failed to fetch cards');
+        }
+        
+        const response = data.value as any;
         this.userCards = response.cards || [];
         this.pagination = response.pagination || this.pagination;
       } catch (err: any) {
@@ -192,10 +207,21 @@ export const useCardStore = defineStore('card', {
           url += `?${queryString}`;
         }
         
-        const response = await $fetch(url, {
-          method: 'GET'
+        // UPDATED: Use useFetch with SPA-friendly options
+        const { data, error } = await useFetch(url, {
+          method: 'GET',
+          // Key parameters to prevent page refresh
+          watch: false,
+          key: `username-cards-${username}-${JSON.stringify(searchParams)}`,
+          // Disable redirects that could cause page reloads
+          redirect: false
         });
         
+        if (error.value) {
+          throw new Error(error.value.message || 'Failed to fetch cards');
+        }
+        
+        const response = data.value as any;
         this.userCards = response.cards || [];
         this.pagination = response.pagination || this.pagination;
         return this.userCards;
@@ -246,13 +272,24 @@ export const useCardStore = defineStore('card', {
         const queryString = queryParams.toString();
         const url = `${config.public.apiBaseUrl}/user-cards/user/${userId}${queryString ? `?${queryString}` : ''}`;
         
-        const response = await $fetch(url, {
+        // UPDATED: Use useFetch with SPA-friendly options
+        const { data, error } = await useFetch(url, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authStore.token}`
-          }
+          },
+          // Key parameters to prevent page refresh
+          watch: false, 
+          key: `search-user-cards-${userId}-${JSON.stringify(searchParams)}`,
+          // Disable redirects that could cause page reloads
+          redirect: false
         });
         
+        if (error.value) {
+          throw new Error(error.value.message || 'Failed to search cards');
+        }
+        
+        const response = data.value as any;
         this.userCards = response.cards || [];
         this.pagination = response.pagination || this.pagination;
       } catch (err: any) {
@@ -316,7 +353,7 @@ export const useCardStore = defineStore('card', {
       }
     },
     
-    // New method to change items per page
+    // UPDATED: Modified to prevent page refresh
     async changeItemsPerPage(userId: string, limit: number, searchParams: Record<string, any> = {}) {
       // Validate the limit value
       const validatedLimit = this.validatePageSize(limit);
@@ -421,15 +458,41 @@ export const useCardStore = defineStore('card', {
         this.loading = true;
         this.error = null;
         
-        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/${cardId}/reveal`, {
+        // Use useFetch with SPA-friendly options
+        const { data, error } = await useFetch(`${config.public.apiBaseUrl}/user-cards/${cardId}/reveal`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${authStore.token}`
-          }
+          },
+          // Key parameters to prevent page refresh
+          watch: false,
+          key: `reveal-card-${cardId}`,
+          // Disable redirects that could cause page reloads
+          redirect: false
         });
         
-        // Refresh the cards list - maintain current page and limit
-        await this.fetchUserCards(userId, this.pagination.currentPage, this.pagination.itemsPerPage);
+        if (error.value) {
+          throw new Error(error.value.message || 'Failed to reveal card');
+        }
+        
+        const response = data.value as any;
+        
+        // Instead of refreshing the entire card list, just update the specific card in the state
+        // Find the card index in the userCards array
+        const cardIndex = this.userCards.findIndex(card => card.id === cardId);
+        
+        if (cardIndex !== -1) {
+          // Update just that one card in the array
+          const updatedCard = response.userCard;
+          
+          // Create a new array with the updated card to maintain reactivity
+          const updatedCards = [...this.userCards];
+          updatedCards[cardIndex] = updatedCard;
+          
+          // Update the state
+          this.userCards = updatedCards;
+        }
+        
         return response.userCard;
       } catch (err: any) {
         console.error('Error revealing card:', err);
@@ -439,33 +502,58 @@ export const useCardStore = defineStore('card', {
       }
     },
 
+    // Update the setWillingToTrade method in your card.ts store file
     async setWillingToTrade(cardId: string, userId: string, willingToTrade: boolean) {
       const authStore = useAuthStore();
       const config = useRuntimeConfig();
       if (!authStore.token) return;
 
-      console.log(willingToTrade);
-    
       try {
         this.loading = true;
         this.error = null;
         
-        const response = await $fetch(`${config.public.apiBaseUrl}/user-cards/${cardId}/trade-willing`, {
+        // Use useFetch with SPA-friendly options
+        const { data, error } = await useFetch(`${config.public.apiBaseUrl}/user-cards/${cardId}/trade-willing`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${authStore.token}`
           },
           body: {
-            'willingToTrade' : !willingToTrade
-          }
+            'willingToTrade': !willingToTrade
+          },
+          // Key parameters to prevent page refresh
+          watch: false,
+          key: `trade-willing-${cardId}-${!willingToTrade}`,
+          // Disable redirects that could cause page reloads
+          redirect: false
         });
         
-        // Refresh the cards list - maintain current page and limit
-        await this.fetchUserCards(userId, this.pagination.currentPage, this.pagination.itemsPerPage);
+        if (error.value) {
+          throw new Error(error.value.message || 'Failed to update trading status');
+        }
+        
+        const response = data.value as any;
+        
+        // Instead of refreshing the entire card list, just update the specific card in the state
+        // Find the card index in the userCards array
+        const cardIndex = this.userCards.findIndex(card => card.id === cardId);
+        
+        if (cardIndex !== -1) {
+          // Update just that one card in the array
+          const updatedCard = response.userCard;
+          
+          // Create a new array with the updated card to maintain reactivity
+          const updatedCards = [...this.userCards];
+          updatedCards[cardIndex] = updatedCard;
+          
+          // Update the state
+          this.userCards = updatedCards;
+        }
+        
         return response.userCard;
       } catch (err: any) {
-        console.error('Error revealing card:', err);
-        this.error = err.message || 'Failed to reveal card';
+        console.error('Error updating trading status:', err);
+        this.error = err.message || 'Failed to update trading status';
       } finally {
         this.loading = false;
       }
@@ -488,13 +576,24 @@ export const useCardStore = defineStore('card', {
           }
         }
         
-        const response = await $fetch(`${config.public.apiBaseUrl}/cards?${queryParams.toString()}`, {
+        // UPDATED: Use useFetch with SPA-friendly options
+        const { data, error } = await useFetch(`${config.public.apiBaseUrl}/cards?${queryParams.toString()}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authStore.token}`
-          }
+          },
+          // Key parameters to prevent page refresh
+          watch: false,
+          key: `search-cards-${JSON.stringify(query)}`,
+          // Disable redirects that could cause page reloads
+          redirect: false
         });
         
+        if (error.value) {
+          throw new Error(error.value.message || 'Failed to search cards');
+        }
+        
+        const response = data.value as any;
         this.allCards = response || [];
         return this.allCards;
       } catch (err: any) {
@@ -567,10 +666,21 @@ export const useCardStore = defineStore('card', {
           url += `?${queryString}`;
         }
         
-        const response = await $fetch(url, {
-          method: 'GET'
+        // UPDATED: Use useFetch with SPA-friendly options
+        const { data, error } = await useFetch(url, {
+          method: 'GET',
+          // Key parameters to prevent page refresh
+          watch: false,
+          key: `trading-marketplace-${JSON.stringify(searchParams)}`,
+          // Disable redirects that could cause page reloads
+          redirect: false
         });
         
+        if (error.value) {
+          throw new Error(error.value.message || 'Failed to fetch trading marketplace');
+        }
+        
+        const response = data.value as any;
         this.tradingMarketplace = response.tradingCards || [];
         this.tradingPagination = response.pagination || this.tradingPagination;
         return this.tradingMarketplace;
