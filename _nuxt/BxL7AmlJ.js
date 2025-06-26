@@ -1,0 +1,1 @@
+import{a0 as n,A as s,a1 as r,a2 as i}from"./BLjF41zC.js";const d=n(async u=>{let e,a;const t=s();if(t.isAuthenticated||([e,a]=r(()=>t.initAuth()),await e,a()),!t.isAuthenticated)return i("/login");if(!t.isAdmin)return i("/")});export{d as default};

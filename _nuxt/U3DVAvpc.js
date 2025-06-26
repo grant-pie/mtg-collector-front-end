@@ -1,1 +1,0 @@
-import{Z as n,g as s,$ as r,a0 as a}from"./CGWYguua.js";const d=n(async u=>{let e,i;const t=s();if(t.isAuthenticated||([e,i]=r(()=>t.initAuth()),await e,i()),!t.isAuthenticated)return a("/login");if(!t.isAdmin)return a("/")});export{d as default};
