@@ -5,6 +5,13 @@
       <NuxtLink to="/" class="text-xl font-bold">MTG Collector</NuxtLink>
       
       <div class="flex space-x-4 items-center">
+         <NuxtLink 
+          v-if="isAuthenticated" 
+          to="/rankings" 
+          class="hover:text-blue-300"
+        >
+          Rankings
+        </NuxtLink>
         <NuxtLink 
           v-if="isAuthenticated" 
           to="/players" 
